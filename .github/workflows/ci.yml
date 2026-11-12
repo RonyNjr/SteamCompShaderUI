@@ -1,0 +1,43 @@
+name: Checks and Decky package
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  monitor:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python: ['3.9', '3.11', '3.14']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m unittest discover -s tests -v
+
+  decky:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - run: npx --yes pnpm@9.15.9 install --frozen-lockfile
+      - run: npx --yes pnpm@9.15.9 run typecheck
+      - run: npx --yes pnpm@9.15.9 run build
+      - run: npx --yes pnpm@9.15.9 test
+      - run: npx --yes pnpm@9.15.9 run package
+      - uses: actions/upload-artifact@v7
+        with:
+          name: steam-shaders-decky
+          path: dist/steam-shaders-*.zip
+          if-no-files-found: error

@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+*.zip
+*.log
+*.sqlite3*
+status.json
+checkpoint.json
+monitor.lock
+node_modules/
+dist/
+build/

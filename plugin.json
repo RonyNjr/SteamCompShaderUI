@@ -1,0 +1,10 @@
+{
+  "name": "Steam Shaders",
+  "author": "RonyNjr",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": ["utility", "shaders"],
+    "description": "Follow Steam shader compilation progress, current-stage estimates and recent history. Offline, read-only Steam access, no root required."
+  }
+}
