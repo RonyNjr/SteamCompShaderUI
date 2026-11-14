@@ -1,0 +1,15 @@
+pkgbase = steam-shaders
+	pkgdesc = Follow Steam shader pre-caching progress in the terminal, notifications and the GNOME top bar
+	pkgver = 0.2.1
+	pkgrel = 1
+	url = https://github.com/RonyNjr/SteamCompShaderUI
+	install = steam-shaders.install
+	arch = any
+	license = MIT
+	depends = python
+	optdepends = libnotify: desktop notification when shader processing finishes
+	optdepends = gnome-shell: top bar indicator (GNOME 51)
+	source = steam-shaders-desktop-0.2.1.tar.gz::https://github.com/RonyNjr/SteamCompShaderUI/releases/download/v0.2.1/steam-shaders-desktop-0.2.1.tar.gz
+	sha256sums = 55cc0e6064a45bdb159a1a2c21654c7ab0db4897cf1d161f202e5cde02698476
+
+pkgname = steam-shaders

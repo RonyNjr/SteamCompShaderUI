@@ -12,7 +12,7 @@ optdepends=('libnotify: desktop notification when shader processing finishes'
             'gnome-shell: top bar indicator (GNOME 51)')
 install=steam-shaders.install
 source=("steam-shaders-desktop-$pkgver.tar.gz::$url/releases/download/v$pkgver/steam-shaders-desktop-$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('55cc0e6064a45bdb159a1a2c21654c7ab0db4897cf1d161f202e5cde02698476')
 
 package() {
   cd steam-shaders

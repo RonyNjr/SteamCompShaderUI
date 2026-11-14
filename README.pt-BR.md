@@ -96,6 +96,22 @@ steam-shaders stop
 `--startup none` remove as entradas de inicialização do aplicativo e permite execução manual.
 `stop` encerra o monitor atual; a inicialização configurada continua valendo no próximo login.
 
+### Pacote para Arch Linux
+
+Em distribuições baseadas no Arch (Arch, CachyOS, EndeavourOS, Manjaro), é possível gerar um
+pacote gerenciado pelo pacman a partir do PKGBUILD deste repositório:
+
+```sh
+git clone https://github.com/RonyNjr/SteamCompShaderUI.git
+cd SteamCompShaderUI/packaging/aur
+makepkg -si
+systemctl --user enable --now steam-shaders.service
+```
+
+O pacote instala em `/usr`; atualize ou remova pelo pacman. Se você usou o `install.py` antes,
+rode `~/.local/bin/steam-shaders uninstall` primeiro. A publicação no AUR está prevista para
+quando o cadastro de contas reabrir.
+
 ### Hyprland, sway e i3
 
 Esses compositores não executam o autostart XDG por padrão, então o monitor pode não iniciar
