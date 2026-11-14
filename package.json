@@ -1,6 +1,6 @@
 {
   "name": "steam-shaders",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Offline Steam shader compilation progress for Decky Loader and Linux desktops",
   "type": "module",
   "packageManager": "pnpm@9.15.9",

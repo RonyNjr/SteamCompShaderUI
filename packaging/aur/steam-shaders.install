@@ -1,0 +1,17 @@
+post_install() {
+  cat <<'EOF'
+==> To start the monitor at login, run as your user (without sudo):
+      systemctl --user enable --now steam-shaders.service
+==> If you installed it before with install.py, remove that copy first:
+      ~/.local/bin/steam-shaders uninstall
+==> GNOME 51: log in again, then enable "Steam Shaders" in the Extensions app.
+==> Hyprland, sway or i3: run "steam-shaders doctor" for the startup line to add.
+EOF
+}
+
+post_upgrade() {
+  cat <<'EOF'
+==> Restart the monitor to use the new version (as your user):
+      systemctl --user restart steam-shaders.service
+EOF
+}

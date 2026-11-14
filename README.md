@@ -9,7 +9,7 @@ The monitor runs offline, reads Steam's logs and game manifests, and checks your
 `fossilize_replay` processes. It does not change games, Steam settings or shader caches.
 The Python monitor uses only the standard library.
 
-**Version 0.2.0 is a development release.** It includes a Linux desktop installation and
+**Version 0.2.1 is a development release.** It includes a Linux desktop installation and
 a Decky plugin installable from URL or ZIP ([Decky guide](docs/decky.md)). The Decky build
 has not yet been tested on a real Steam Deck and is not listed in the Decky Plugin Store.
 
@@ -221,13 +221,13 @@ pnpm test
 pnpm run package
 ```
 
-The resulting `dist/steam-shaders-0.2.0.zip` includes the monitor. The end user does not
+The resulting `dist/steam-shaders-<version>.zip` includes the monitor. The end user does not
 need Node.js, pnpm, pip or a separately installed service. See [docs/decky.md](docs/decky.md)
 for installation and the current store-submission restriction.
 
 To publish a release, update the version in `package.json`, `steam_shaders/support.py` and
 `integrations/gnome/metadata.json`, date the CHANGELOG entry, then push a matching tag
-(for example `git tag v0.2.0 && git push origin v0.2.0`). CI runs every check and attaches the
+(for example `git tag v0.2.1 && git push origin v0.2.1`). CI runs every check and attaches the
 Decky ZIP and the desktop archive to the GitHub release, each with a versioned and a fixed name.
 
 Licensed under [MIT](LICENSE). Independent community project; not affiliated with Valve,

@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 APP_ID = "steamcompshaderui"
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 GNOME_VERSIONS = ("51",)
 
 

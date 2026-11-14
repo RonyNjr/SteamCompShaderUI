@@ -57,7 +57,7 @@ pnpm run package
 Without pnpm installed, run each command with `npx --yes pnpm@9.15.9` in place of `pnpm`,
 without installing tools globally. These tools are only needed for development.
 
-The package is written to `dist/steam-shaders-0.2.0.zip`:
+The package is written to `dist/steam-shaders-<version>.zip`:
 
 ```text
 steam-shaders/

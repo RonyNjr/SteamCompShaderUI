@@ -5,7 +5,7 @@
 Acompanhe a compilação de shaders da Steam sem deixar a página de downloads aberta.
 Mostra jogo, porcentagem informada pela Steam, etapa, estimativa da etapa e histórico.
 
-**Versão 0.2.0 em desenvolvimento.** Inclui a instalação para desktop Linux e um plugin
+**Versão 0.2.1 em desenvolvimento.** Inclui a instalação para desktop Linux e um plugin
 Decky instalável por URL ou ZIP ([guia do Decky](docs/decky.pt-BR.md)). O plugin ainda
 precisa ser validado em um Steam Deck real e não está na loja do Decky.
 
@@ -224,13 +224,13 @@ pnpm test
 pnpm run package
 ```
 
-O ZIP fica em `dist/steam-shaders-0.2.0.zip`. Quem instala o ZIP no Decky não precisa
+O ZIP fica em `dist/steam-shaders-<versão>.zip`. Quem instala o ZIP no Decky não precisa
 instalar pnpm, Node.js, pip ou o serviço do desktop. As instruções e a restrição atual da
 loja estão em [docs/decky.pt-BR.md](docs/decky.pt-BR.md).
 
 Para publicar uma release, atualize a versão em `package.json`, `steam_shaders/support.py` e
 `integrations/gnome/metadata.json`, coloque a data no CHANGELOG e envie uma tag correspondente
-(por exemplo `git tag v0.2.0 && git push origin v0.2.0`). O CI roda todas as verificações e
+(por exemplo `git tag v0.2.1 && git push origin v0.2.1`). O CI roda todas as verificações e
 anexa à release o ZIP do Decky e o arquivo desktop, cada um com nome versionado e nome fixo.
 
 Licença [MIT](LICENSE). Projeto independente, sem vínculo com Valve, Steam, GNOME ou Decky.

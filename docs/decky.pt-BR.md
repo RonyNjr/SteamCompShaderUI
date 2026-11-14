@@ -60,7 +60,7 @@ Se o pnpm não estiver disponível, é possível executar cada comando com
 `npx --yes pnpm@9.15.9` no lugar de `pnpm`, sem instalar ferramentas globalmente.
 Essas ferramentas são usadas apenas no desenvolvimento.
 
-O pacote fica em `dist/steam-shaders-0.2.0.zip`:
+O pacote fica em `dist/steam-shaders-<versão>.zip`:
 
 ```text
 steam-shaders/

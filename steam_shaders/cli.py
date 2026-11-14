@@ -15,6 +15,7 @@ from .support import APP_ID, VERSION, config_path, data_dir, discover_steam, loa
 
 # Compositores que não executam o autostart XDG sem configuração extra.
 COMPOSITORS = {"hyprland": "exec-once =", "sway": "exec", "i3": "exec --no-startup-id"}
+SYSTEM_UNIT = Path("/usr/lib/systemd/user/steam-shaders.service")  # Instalação por pacote.
 
 
 def startup_hint():
@@ -23,8 +24,8 @@ def startup_hint():
     found = next((name for name in COMPOSITORS if name in desktops), None)
     if found is None:
         return None
-    unit = xdg_home("XDG_CONFIG_HOME", ".config") / "systemd/user/steam-shaders.service"
-    command = ("systemctl --user start steam-shaders.service" if unit.exists()
+    units = (xdg_home("XDG_CONFIG_HOME", ".config") / "systemd/user/steam-shaders.service", SYSTEM_UNIT)
+    command = ("systemctl --user start steam-shaders.service" if any(unit.exists() for unit in units)
                else "~/.local/bin/steam-shaders run")
     return f"{COMPOSITORS[found]} {command}"
 
@@ -72,12 +73,16 @@ def status(args):
 
 
 def doctor():
-    from .installer import gnome_supported, systemd_available
+    from .installer import PACKAGE, SYSTEM_MARKER, gnome_supported, systemd_available
     from shutil import which
 
     config = load_config()
     found = [Path(config["steam_dir"]).expanduser()] if config.get("steam_dir") else discover_steam()
+    packaged = (PACKAGE.parent / SYSTEM_MARKER).exists()
     print(f"Steam Shaders {VERSION} · Python {sys.version.split()[0]} · {sys.platform}")
+    print("Instalação: " + ("pacote da distribuição" if packaged else str(PACKAGE.parent)))
+    if packaged:
+        print("  Para iniciar no login: systemctl --user enable --now steam-shaders.service")
     print(f"Desktop: {os.environ.get('XDG_CURRENT_DESKTOP', 'não identificado')}")
     print(f"Configuração: {config_path()}")
     print(f"Dados: {data_dir()}")
@@ -129,7 +134,7 @@ def stop_monitor(directory):
                 started = (process / "stat").read_text().rsplit(")", 1)[1].split()[19]
                 args = (process / "cmdline").read_bytes().split(b"\0")
                 package = Path(__file__).resolve().parent
-                roots = {package.parent, Path.home() / ".local/lib" / APP_ID}
+                roots = {package.parent, Path.home() / ".local/lib" / APP_ID, Path("/usr/lib") / APP_ID}
                 scripts = {os.fsencode(root / name) for root in roots
                            for name in ("run.py", "cli.py", "monitor.py")}
                 # Também aceita invocação relativa feita diretamente no repositório.

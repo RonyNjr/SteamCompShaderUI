@@ -10,3 +10,6 @@ monitor.lock
 node_modules/
 dist/
 build/
+packaging/aur/src/
+packaging/aur/pkg/
+packaging/aur/*.tar.*

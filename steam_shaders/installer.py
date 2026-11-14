@@ -23,6 +23,10 @@ LEGACY_PACKAGE_FILES = ("decky.py",)
 EXTENSION_FILES = ("extension.js", "model.js", "stylesheet.css", "metadata.json",
                    "icons/shader-symbolic.svg")
 SERVICE = "steam-shaders.service"
+# Instalação feita por pacote de distribuição (ex.: AUR); o pacote é quem atualiza e remove.
+SYSTEM_LIB = Path("/usr/lib") / APP_ID
+SYSTEM_PYTHON = "/usr/bin/python3"
+SYSTEM_MARKER = "installed-by-package-manager"
 
 
 def extension_source(name):
@@ -84,6 +88,71 @@ def gnome_supported():
     return bool(match and match[1] in GNOME_VERSIONS)
 
 
+def copy_program(lib):
+    (lib / "steam_shaders").mkdir(parents=True, exist_ok=True)
+    for name in PROGRAM_FILES:
+        source, target = PACKAGE / name, lib / "steam_shaders" / name
+        if source.resolve() != target.resolve():
+            shutil.copy2(source, target)
+    (lib / "run.py").write_text(
+        'from steam_shaders.cli import main\n\nif __name__ == "__main__":\n    main()\n', encoding="utf-8")
+    for name in LEGACY_FILES:
+        (lib / name).unlink(missing_ok=True)
+    for name in LEGACY_PACKAGE_FILES:
+        (lib / "steam_shaders" / name).unlink(missing_ok=True)
+
+
+def write_launcher(path, python, runner):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f'#!/bin/sh\nexec {shlex.quote(str(python))} {shlex.quote(str(runner))} "$@"\n',
+                    encoding="utf-8")
+    path.chmod(0o755)
+
+
+def copy_extension(extension):
+    for name in EXTENSION_FILES:
+        destination = extension / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(extension_source(name), destination)
+
+
+def unit_text(command, environment=()):
+    variables = "".join(f"Environment={environment_quote(item)}\n" for item in environment)
+    return f"""[Unit]
+Description=Steam shader compilation monitor
+After=graphical-session-pre.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart={command}
+{variables}Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=graphical-session.target
+"""
+
+
+def system_install(destdir):
+    """Layout em /usr para pacotes de distribuição; não liga serviços nem altera a sessão."""
+    root = Path(destdir).expanduser().resolve()
+    if root == Path("/"):
+        raise ValueError("--system prepara pacotes; instale no sistema pelo gerenciador de pacotes.")
+    lib = root / "usr/lib" / APP_ID
+    copy_program(lib)
+    (lib / SYSTEM_MARKER).write_text("Instalado por um gerenciador de pacotes.\n", encoding="utf-8")
+    runner = SYSTEM_LIB / "run.py"
+    write_launcher(root / "usr/bin/steam-shaders", SYSTEM_PYTHON, runner)
+    unit = root / "usr/lib/systemd/user" / SERVICE
+    unit.parent.mkdir(parents=True, exist_ok=True)
+    unit.write_text(unit_text(f"{unit_quote(SYSTEM_PYTHON)} {unit_quote(runner)} run"), encoding="utf-8")
+    copy_extension(root / "usr/share/gnome-shell/extensions" / UUID)
+    print(f"Layout de pacote preparado em {root}")
+
+
 def install(root=None, startup="auto", gnome="auto"):
     paths = locations(root)
     mode = startup
@@ -100,27 +169,11 @@ def install(root=None, startup="auto", gnome="auto"):
     command = f"{unit_quote(sys.executable)} {unit_quote(lib / 'run.py')} run"
     desktop_command = ("systemctl --user start " + SERVICE if mode == "systemd" else
                        f"{desktop_quote(sys.executable)} {desktop_quote(lib / 'run.py')} run")
-    (lib / "steam_shaders").mkdir(parents=True, exist_ok=True)
-    for name in PROGRAM_FILES:
-        source, target = PACKAGE / name, lib / "steam_shaders" / name
-        if source.resolve() != target.resolve():
-            shutil.copy2(source, target)
-    (lib / "run.py").write_text(
-        'from steam_shaders.cli import main\n\nif __name__ == "__main__":\n    main()\n', encoding="utf-8")
-    launcher.parent.mkdir(parents=True, exist_ok=True)
-    launcher.write_text('#!/bin/sh\nexec ' + shlex.quote(sys.executable) + ' ' +
-                        shlex.quote(str(lib / "run.py")) + ' "$@"\n', encoding="utf-8")
-    launcher.chmod(0o755)
+    copy_program(lib)
+    write_launcher(launcher, sys.executable, lib / "run.py")
     extension = paths["data"] / "gnome-shell/extensions" / UUID
     if with_gnome:
-        for name in EXTENSION_FILES:
-            destination = extension / name
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(extension_source(name), destination)
-    for name in LEGACY_FILES:
-        (lib / name).unlink(missing_ok=True)
-    for name in LEGACY_PACKAGE_FILES:
-        (lib / "steam_shaders" / name).unlink(missing_ok=True)
+        copy_extension(extension)
     if mode != "systemd" and unit_path.exists():
         if not root and systemd_available():
             subprocess.run(["systemctl", "--user", "disable", "--now", SERVICE], check=True, timeout=20)
@@ -129,24 +182,9 @@ def install(root=None, startup="auto", gnome="auto"):
         unit_path.parent.mkdir(parents=True, exist_ok=True)
         # O autostart também inicia a unidade em desktops que não ativam
         # graphical-session.target. systemctl start é idempotente.
-        unit_path.write_text(f"""[Unit]
-Description=Steam shader compilation monitor
-After=graphical-session-pre.target
-PartOf=graphical-session.target
-
-[Service]
-Type=simple
-ExecStart={command}
-Environment={environment_quote('XDG_DATA_HOME=' + str(paths['data']))}
-Environment={environment_quote('XDG_CONFIG_HOME=' + str(paths['config']))}
-Restart=on-failure
-RestartSec=5
-UMask=0077
-NoNewPrivileges=yes
-
-[Install]
-WantedBy=graphical-session.target
-""", encoding="utf-8")
+        unit_path.write_text(unit_text(command, ("XDG_DATA_HOME=" + str(paths["data"]),
+                                                 "XDG_CONFIG_HOME=" + str(paths["config"]))),
+                             encoding="utf-8")
     if mode != "none":
         autostart.parent.mkdir(parents=True, exist_ok=True)
         autostart.write_text(f"""[Desktop Entry]
@@ -240,19 +278,29 @@ def main(argv=None):
     parser.add_argument("--gnome", choices=["auto", "yes", "no"], default="auto")
     parser.add_argument("--uninstall", action="store_true", help="Remove o programa, preservando os dados")
     parser.add_argument("--yes", action="store_true", help="Confirma a desinstalação")
+    parser.add_argument("--system", type=Path, metavar="DESTDIR",
+                        help="Gera o layout /usr dentro de DESTDIR, para pacotes de distribuição")
     args = parser.parse_args(argv)
     if sys.platform != "linux":
         parser.error("Este projeto requer Linux.")
     if sys.version_info < (3, 9):
         parser.error("É necessário Python 3.9 ou mais recente.")
-    if os.geteuid() == 0 and not args.root:
+    if (PACKAGE.parent / SYSTEM_MARKER).exists():
+        parser.exit(1, "Esta cópia foi instalada por um gerenciador de pacotes; use-o para atualizar "
+                       "ou remover (ex.: sudo pacman -R steam-shaders).\n")
+    # makepkg e afins geram o pacote como root simulado (fakeroot), dentro de DESTDIR.
+    if os.geteuid() == 0 and not (args.root or args.system):
         parser.error("Execute sem sudo: a instalação pertence ao seu usuário.")
+    if args.system and (args.root or args.activate or args.uninstall):
+        parser.error("--system não pode ser usado com --root, --activate ou --uninstall")
     if args.root and args.activate:
         parser.error("--root e --activate não podem ser usados juntos")
     if args.uninstall and args.activate:
         parser.error("--uninstall e --activate não podem ser usados juntos")
     try:
-        if args.uninstall:
+        if args.system:
+            system_install(args.system)
+        elif args.uninstall:
             if not args.yes and input("Remover Steam Shaders e preservar seus dados? [s/N] ").lower() != "s":
                 print("Desinstalação cancelada.")
                 return

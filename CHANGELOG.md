@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 — 2026-11-14
+
+- Add `install.py --system DESTDIR`, which prepares a `/usr` layout for distribution packages,
+  and an Arch Linux (AUR) package definition in `packaging/aur/`.
+- Recognize installations made by a package manager: `doctor` shows how to enable the service
+  and `uninstall` points to the package manager instead of removing files.
+
 ## 0.2.0 — 2026-11-14
 
 - Discover native, Flatpak and common alternate Steam paths, with an explicit path override.

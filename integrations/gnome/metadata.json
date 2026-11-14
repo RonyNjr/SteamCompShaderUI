@@ -3,7 +3,7 @@
   "name": "Steam Shaders",
   "description": "Acompanha a compilação de shaders da Steam e aparece somente durante o processamento.",
   "shell-version": ["51"],
-  "version": 2,
-  "version-name": "0.2.0",
+  "version": 3,
+  "version-name": "0.2.1",
   "url": "https://github.com/RonyNjr/SteamCompShaderUI"
 }

@@ -13,7 +13,8 @@ import unittest
 from unittest.mock import patch
 
 from steam_shaders.cli import read_status, startup_hint, stop_monitor
-from steam_shaders.installer import install, locations, uninstall
+from steam_shaders.installer import (PROGRAM_FILES, SYSTEM_MARKER, install, locations, system_install,
+                                     uninstall)
 from steam_shaders.monitor import Processes, inspect_processes
 from steam_shaders.support import (VERSION, config_path, discover_steam, load_config, steam_candidates,
                                    xdg_home)
@@ -36,6 +37,10 @@ class DiscoveryTests(unittest.TestCase):
         self.addCleanup(self.environment.stop)
 
     def test_startup_hint_for_compositors_without_xdg_autostart(self):
+        # Independe de o pacote da distribuição estar instalado na máquina que roda os testes.
+        system_unit = patch("steam_shaders.cli.SYSTEM_UNIT", self.root / "missing.service")
+        system_unit.start()
+        self.addCleanup(system_unit.stop)
         with patch.dict(os.environ, {"XDG_CURRENT_DESKTOP": "ubuntu:GNOME"}):
             self.assertIsNone(startup_hint())
         with patch.dict(os.environ, {"XDG_CURRENT_DESKTOP": "Hyprland"}):
@@ -204,6 +209,34 @@ class RuntimeTests(unittest.TestCase):
                     process.terminate()
                     process.wait(timeout=5)
                 process.stderr.close()
+
+
+class SystemPackageTests(unittest.TestCase):
+    def test_usr_layout_for_distribution_packages(self):
+        with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stdout(io.StringIO()):
+            destdir = Path(folder)
+            system_install(destdir)
+            lib = destdir / "usr/lib/steamcompshaderui"
+            self.assertEqual(sorted(path.name for path in (lib / "steam_shaders").glob("*.py")),
+                             sorted(PROGRAM_FILES))
+            self.assertTrue((lib / SYSTEM_MARKER).is_file())
+            launcher = (destdir / "usr/bin/steam-shaders").read_text()
+            self.assertIn("exec /usr/bin/python3 /usr/lib/steamcompshaderui/run.py", launcher)
+            unit = (destdir / "usr/lib/systemd/user/steam-shaders.service").read_text()
+            self.assertIn('ExecStart="/usr/bin/python3" "/usr/lib/steamcompshaderui/run.py" run', unit)
+            self.assertNotIn("Environment=", unit)
+            self.assertNotIn(folder, launcher + unit)  # Nenhum caminho de build vaza para o pacote.
+            extension = destdir / "usr/share/gnome-shell/extensions/steam-shaders@rony.local"
+            self.assertTrue((extension / "model.js").is_file())
+            # O comando instalado reconhece o pacote e não tenta desinstalar por conta própria.
+            result = subprocess.run([sys.executable, str(lib / "run.py"), "uninstall", "--yes"],
+                                    capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("gerenciador de pacotes", result.stderr)
+
+    def test_system_layout_refuses_the_real_root(self):
+        with self.assertRaises(ValueError):
+            system_install("/")
 
 
 class DesktopPackageTests(unittest.TestCase):
