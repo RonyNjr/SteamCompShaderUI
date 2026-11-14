@@ -1,13 +1,13 @@
 # Steam Shaders
 
+[English](README.md) · **Português do Brasil**
+
 Acompanhe a compilação de shaders da Steam sem deixar a página de downloads aberta.
 Mostra jogo, porcentagem informada pela Steam, etapa, estimativa da etapa e histórico.
 
-[English](README.md) · [Plugin Decky](docs/decky.md)
-
-**Versão 0.2.0 em desenvolvimento.** A instalação para desktop Linux e o plugin para
-instalação manual no Decky estão incluídos. O plugin ainda precisa ser validado em um
-Steam Deck real e não está na loja do Decky.
+**Versão 0.2.0 em desenvolvimento.** Inclui a instalação para desktop Linux e um plugin
+Decky instalável por URL ou ZIP ([guia do Decky](docs/decky.pt-BR.md)). O plugin ainda
+precisa ser validado em um Steam Deck real e não está na loja do Decky.
 
 ## Compatibilidade
 
@@ -91,6 +91,23 @@ steam-shaders stop
 
 `--startup none` remove as entradas de inicialização do aplicativo e permite execução manual.
 `stop` encerra o monitor atual; a inicialização configurada continua valendo no próximo login.
+
+### Hyprland, sway e i3
+
+Esses compositores não executam o autostart XDG por padrão, então o monitor pode não iniciar
+depois de reiniciar o computador. `steam-shaders doctor` identifica esses ambientes e mostra a
+linha exata para a configuração do compositor. Na instalação padrão com systemd:
+
+```text
+# Hyprland (~/.config/hypr/hyprland.conf)
+exec-once = systemctl --user start steam-shaders.service
+# sway (~/.config/sway/config)
+exec systemctl --user start steam-shaders.service
+# i3 (~/.config/i3/config)
+exec --no-startup-id systemctl --user start steam-shaders.service
+```
+
+Com `--startup autostart`, use `~/.local/bin/steam-shaders run` como comando.
 
 ## Caminhos e configuração
 
@@ -205,7 +222,12 @@ pnpm run package
 
 O ZIP fica em `dist/steam-shaders-0.2.0.zip`. Quem instala o ZIP no Decky não precisa
 instalar pnpm, Node.js, pip ou o serviço do desktop. As instruções e a restrição atual da
-loja estão em [docs/decky.md](docs/decky.md).
+loja estão em [docs/decky.pt-BR.md](docs/decky.pt-BR.md).
+
+Para publicar uma release, atualize a versão em `package.json`, `steam_shaders/support.py` e
+`integrations/gnome/metadata.json`, coloque a data no CHANGELOG e envie uma tag correspondente
+(por exemplo `git tag v0.2.0 && git push origin v0.2.0`). O CI roda todas as verificações e
+anexa `steam-shaders-<versão>.zip` e `steam-shaders.zip` à release no GitHub.
 
 Licença [MIT](LICENSE). Projeto independente, sem vínculo com Valve, Steam, GNOME ou Decky.
 Veja o [histórico de versões](CHANGELOG.md).

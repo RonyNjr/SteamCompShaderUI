@@ -1,34 +1,50 @@
-# Steam Shaders no Decky Loader
+# Steam Shaders on Decky Loader
 
-O plugin mostra o progresso no menu rápido do Decky, com jogo, porcentagem, etapa,
-estimativa da etapa e os últimos processamentos. Uma notificação do Decky confirma a conclusão.
-A interface usa português do Brasil nesta versão.
+**English** · [Português do Brasil](decky.pt-BR.md)
 
-**Situação:** versão experimental para instalação manual. O frontend compila e o backend
-é testado com a API do Decky simulada. Ainda não houve validação em um Steam Deck real.
-Não há versão publicada na loja.
+The plugin shows progress in Decky's quick access menu: game, percentage, stage,
+current-stage estimate and recent history. A Decky notification confirms completion.
+The plugin's interface is in Brazilian Portuguese in this version.
 
-## Instalação manual
+**Status:** experimental. The frontend builds, the backend is tested against a simulated Decky
+API, and the API and Python modules it uses were checked against Decky Loader 3.3.1.
+It has not yet been validated on a real Steam Deck. The plugin is not in the Decky store.
 
-1. Obtenha `steam-shaders-0.2.0.zip` de um build deste projeto. Enquanto não houver uma release
-   publicada, use o build local descrito abaixo ou o artefato do workflow do GitHub, quando disponível.
-2. Nas configurações do Decky, habilite o modo de desenvolvedor.
-3. Use **Install Plugin from ZIP File** e selecione o arquivo.
-4. Abra **Steam Shaders** no menu de plugins. A detecção e a leitura começam automaticamente.
+## Install from URL
 
-Não é preciso instalar o serviço do desktop, GNOME, Node.js ou pacotes Python no Steam Deck.
-O monitor é incluído no ZIP e roda no backend Python já oferecido pelo Decky.
-O plugin não usa a flag `_root`, não inicia comandos externos e não baixa dados da internet.
-Ele não altera arquivos da Steam nem cancela compilações.
+This works once a release has been published on GitHub.
 
-Ao desabilitar ou remover o plugin, seu monitor encerra. O código não apaga o histórico;
-o gerenciamento dos diretórios do plugin continua pertencendo ao Decky.
-A instalação desktop e o plugin guardam históricos separados. Se usar ambos, desative
-notificações em um deles para evitar avisos duplicados.
+1. In Decky, open **Settings › General** and enable **Developer mode**.
+2. In **Settings › Developer**, find **Install Plugin from URL**.
+3. Enter the address below and select **Install**:
 
-## Compilar
+   ```text
+   https://github.com/RonyNjr/SteamCompShaderUI/releases/latest/download/steam-shaders.zip
+   ```
 
-Na pasta do repositório, com Python 3.9+, Node.js 22+ e pnpm **9** instalados:
+4. Open **Steam Shaders** from the plugin menu. Detection and monitoring start automatically.
+
+To update, install again from the same address; it always points to the latest release.
+
+## Install from a ZIP file
+
+1. Download `steam-shaders.zip` from the [releases page](https://github.com/RonyNjr/SteamCompShaderUI/releases)
+   or build the package locally as described in [Build](#build).
+2. With Developer mode enabled, use **Install Plugin from ZIP File** and select the file.
+
+The Steam Deck does not need the desktop service, GNOME, Node.js or Python packages.
+The monitor is bundled in the ZIP and runs in the Python backend that Decky already provides.
+The plugin does not use the `_root` flag, start external commands or download data.
+It does not change Steam files or cancel compilations.
+
+Disabling or removing the plugin stops its monitor. The code does not delete history;
+Decky remains responsible for the plugin's directories.
+The desktop installation and the plugin keep separate histories. If you use both, disable
+notifications in one of them to avoid duplicate alerts.
+
+## Build
+
+From the repository, with Python 3.9+, Node.js 22+ and pnpm **9** installed:
 
 ```sh
 pnpm install --frozen-lockfile
@@ -38,11 +54,10 @@ pnpm test
 pnpm run package
 ```
 
-Se o pnpm não estiver disponível, é possível executar cada comando com
-`npx --yes pnpm@9.15.9` no lugar de `pnpm`, sem instalar ferramentas globalmente.
-Essas ferramentas são usadas apenas no desenvolvimento.
+Without pnpm installed, run each command with `npx --yes pnpm@9.15.9` in place of `pnpm`,
+without installing tools globally. These tools are only needed for development.
 
-O pacote fica em `dist/steam-shaders-0.2.0.zip`:
+The package is written to `dist/steam-shaders-0.2.0.zip`:
 
 ```text
 steam-shaders/
@@ -57,59 +72,58 @@ steam-shaders/
   LICENSE
 ```
 
-O build copia o pacote `steam_shaders/` para a área temporária `build/decky/`.
-O frontend também usa `integrations/shared/model.js` para apresentar as mesmas informações do GNOME.
-Não há uma segunda implementação do parser de logs.
+The build copies the `steam_shaders/` package into the temporary `build/decky/` area.
+The frontend uses `integrations/shared/model.js` to present the same information as GNOME.
+There is no second implementation of the log parser.
 
-Os arquivos de runtime ficam em `build/decky/dist/`, `build/decky/py_modules/` e
-`build/decky/vendor/`. O empacotador os coloca nos caminhos esperados pelo Decky dentro do ZIP.
-O ZIP inclui também os fontes e as licenças necessários para reconstruir a interface.
+Runtime files are placed in `build/decky/dist/`, `build/decky/py_modules/` and
+`build/decky/vendor/`. The packager moves them to the paths Decky expects inside the ZIP.
+The ZIP also includes the sources and licenses needed to rebuild the frontend.
 
-## Configuração e diagnóstico
+## Configuration and diagnostics
 
-O backend usa `DECKY_PLUGIN_RUNTIME_DIR` para estado, cursor e histórico. A configuração
-opcional fica em `DECKY_PLUGIN_SETTINGS_DIR/config.json`; os diretórios exatos são definidos
-pelo próprio Decky, sem assumir que o usuário se chama `deck`.
+The backend stores state, log cursor and history in `DECKY_PLUGIN_RUNTIME_DIR`. Optional
+configuration lives in `DECKY_PLUGIN_SETTINGS_DIR/config.json`; Decky defines the exact
+directories, so the plugin does not assume the user is called `deck`.
 
 ```json
 {
-  "steam_dir": "/caminho/absoluto/da/Steam",
+  "steam_dir": "/absolute/path/to/Steam",
   "notifications": false
 }
 ```
 
-Omita `steam_dir` para detecção automática. Omita `notifications` para receber avisos.
-Recarregue o plugin depois de editar a configuração. Falhas do backend aparecem no log do
-plugin mantido pelo Decky. Ausência de `shader_log.txt` pode significar que o pré-cache ainda
-não gerou atividade; confira também as configurações da Steam.
+Omit `steam_dir` for automatic detection. Omit `notifications` to receive alerts.
+Reload the plugin after editing the configuration. Backend failures appear in the plugin log
+kept by Decky. A missing `shader_log.txt` can mean pre-caching has not produced activity yet;
+also check Steam's settings.
 
-## Validação no aparelho
+## On-device validation
 
-Antes de tratar esta versão como estável, precisamos registrar:
+Before treating this version as stable, we need to record:
 
-- SteamOS e Decky usados no teste, nos canais Stable e Beta.
-- Aparição de jogo e progresso durante uma compilação real, com navegação pelo controle.
-- Notificação após conclusão confirmada; ausência de aviso de sucesso em interrupções.
-- Recarregamento e desativação do plugin encerrando o monitor, sem processos abandonados.
-- Comportamento ao suspender/retomar o Steam Deck, abrir um jogo e fechar a Steam.
+- SteamOS and Decky versions used, on both Stable and Beta channels.
+- Game and progress appearing during a real compilation, navigating with the controller.
+- A notification after confirmed completion, and no success alert for interruptions.
+- Reloading and disabling the plugin stopping the monitor, with no leftover processes.
+- Behavior when suspending/resuming the Steam Deck, launching a game and closing Steam.
 
-As verificações automatizadas não substituem esses testes. Uma imagem real da interface no
-Decky também deve ser capturada antes de preparar uma apresentação para a loja.
+Automated checks do not replace these tests. A real screenshot of the Decky interface should
+also be captured before preparing a store listing.
 
-## Restrição atual da loja
+## Current store restriction
 
-Consultado em **12/11/2026**: o [formulário oficial para novos plugins](https://github.com/SteamDeckHomebrew/decky-plugin-database/blob/main/.github/PULL_REQUEST_TEMPLATE/plugin_addition.md)
-exige declarar que a maior parte do código enviado não foi escrita por IA generativa.
-Este projeto foi desenvolvido com assistência de IA e não pode fazer essa declaração
-honestamente no estado atual. Por isso, a distribuição preparada aqui é o ZIP para
-instalação manual; o projeto não está pronto para um envio elegível à loja.
+Checked on **2026-11-12**: the [official form for new plugins](https://github.com/SteamDeckHomebrew/decky-plugin-database/blob/main/.github/PULL_REQUEST_TEMPLATE/plugin_addition.md)
+requires declaring that most of the submitted code was not written by generative AI.
+This project was developed with AI assistance and cannot honestly make that declaration
+in its current state. Distribution therefore happens through GitHub releases, installed from
+URL or ZIP; the project is not ready for an eligible store submission.
 
-O mesmo formulário pede validação pelo autor em SteamOS Stable e Beta e prevê teste de
-terceiros. O [repositório da loja](https://github.com/SteamDeckHomebrew/decky-plugin-database)
-explica o envio por pull request. Caso a política mude ou os mantenedores esclareçam uma
-forma de participação aplicável ao projeto, a elegibilidade deve ser reavaliada sem omitir
-como o código foi produzido.
+The same form asks for author validation on SteamOS Stable and Beta and anticipates
+third-party testing. The [store repository](https://github.com/SteamDeckHomebrew/decky-plugin-database)
+explains submission by pull request. If the policy changes or maintainers clarify a path that
+applies to this project, eligibility should be reassessed without omitting how the code was produced.
 
-Referências de implementação: [template oficial](https://github.com/SteamDeckHomebrew/decky-plugin-template),
-[API e caminhos Python do Decky](https://github.com/SteamDeckHomebrew/decky-loader/blob/main/backend/decky_loader/plugin/imports/decky.py)
-e [API do frontend](https://github.com/SteamDeckHomebrew/decky-frontend-lib).
+Implementation references: [official template](https://github.com/SteamDeckHomebrew/decky-plugin-template),
+[Decky Python API and paths](https://github.com/SteamDeckHomebrew/decky-loader/blob/main/backend/decky_loader/plugin/imports/decky.py)
+and [frontend API](https://github.com/SteamDeckHomebrew/decky-frontend-lib).

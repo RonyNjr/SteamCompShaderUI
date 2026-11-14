@@ -7,8 +7,12 @@
 - Add XDG autostart when a user systemd manager is unavailable; preserve existing installation paths.
 - Add `steam-shaders run`, `status`, `doctor`, `stop` and data-preserving `uninstall` commands.
 - Validate optional configuration and ignore other users' Steam/replay processes.
-- Bundle a manually installable Decky Loader plugin with progress, current-stage estimates,
-  recent history and Decky completion notifications. Real Steam Deck validation is pending.
+- Bundle a Decky Loader plugin with progress, current-stage estimates, recent history and
+  Decky completion notifications. Real Steam Deck validation is pending.
+- Publish tagged releases from CI with a stable `steam-shaders.zip` link for Decky's
+  "Install Plugin from URL".
+- `doctor` shows the startup line for Hyprland, sway and i3, which skip XDG autostart.
 - Share the parser, history and presentation logic across the GNOME and Decky interfaces.
-- Add MIT licensing, English/Brazilian Portuguese documentation, CI and portability/lifecycle tests.
+- Add MIT licensing, English/Brazilian Portuguese documentation with a language switcher,
+  CI and portability/lifecycle tests.
 - Document Decky's restriction on submitting code mostly written by generative AI.

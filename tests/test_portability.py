@@ -11,10 +11,11 @@ import time
 import unittest
 from unittest.mock import patch
 
-from steam_shaders.cli import read_status, stop_monitor
+from steam_shaders.cli import read_status, startup_hint, stop_monitor
 from steam_shaders.installer import install, locations, uninstall
 from steam_shaders.monitor import Processes, inspect_processes
-from steam_shaders.support import config_path, discover_steam, load_config, steam_candidates, xdg_home
+from steam_shaders.support import (VERSION, config_path, discover_steam, load_config, steam_candidates,
+                                   xdg_home)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -32,6 +33,18 @@ class DiscoveryTests(unittest.TestCase):
         self.environment = patch.dict(os.environ, {"XDG_DATA_HOME": "", "XDG_CONFIG_HOME": ""})
         self.environment.start()
         self.addCleanup(self.environment.stop)
+
+    def test_startup_hint_for_compositors_without_xdg_autostart(self):
+        with patch.dict(os.environ, {"XDG_CURRENT_DESKTOP": "ubuntu:GNOME"}):
+            self.assertIsNone(startup_hint())
+        with patch.dict(os.environ, {"XDG_CURRENT_DESKTOP": "Hyprland"}):
+            self.assertEqual(startup_hint(), "exec-once = ~/.local/bin/steam-shaders run")
+            unit = self.home / ".config/systemd/user/steam-shaders.service"
+            unit.parent.mkdir(parents=True)
+            unit.touch()
+            self.assertEqual(startup_hint(), "exec-once = systemctl --user start steam-shaders.service")
+        with patch.dict(os.environ, {"XDG_CURRENT_DESKTOP": "sway"}):
+            self.assertEqual(startup_hint(), "exec systemctl --user start steam-shaders.service")
 
     def test_flatpak_discovery_without_native_steam(self):
         flatpak = self.home / ".var/app/com.valvesoftware.Steam/.local/share/Steam"
@@ -86,7 +99,7 @@ class InstallerTests(unittest.TestCase):
             if shutil.which("desktop-file-validate"):
                 subprocess.run(["desktop-file-validate", str(desktop)], check=True, capture_output=True)
             version = subprocess.check_output([str(paths["bin"]), "--version"], text=True).strip()
-            self.assertEqual(version, "0.2.0")
+            self.assertEqual(version, VERSION)
             diagnostic = subprocess.run([str(paths["bin"]), "doctor"],
                                         capture_output=True, text=True, timeout=10)
             self.assertEqual(diagnostic.returncode, 0, diagnostic.stderr)

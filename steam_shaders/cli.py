@@ -11,7 +11,22 @@ import subprocess
 import sys
 import time
 
-from .support import APP_ID, VERSION, config_path, data_dir, discover_steam, load_config
+from .support import APP_ID, VERSION, config_path, data_dir, discover_steam, load_config, xdg_home
+
+# Compositores que não executam o autostart XDG sem configuração extra.
+COMPOSITORS = {"hyprland": "exec-once =", "sway": "exec", "i3": "exec --no-startup-id"}
+
+
+def startup_hint():
+    """Linha a adicionar na configuração do compositor, ou None quando o autostart basta."""
+    desktops = os.environ.get("XDG_CURRENT_DESKTOP", "").lower().split(":")
+    found = next((name for name in COMPOSITORS if name in desktops), None)
+    if found is None:
+        return None
+    unit = xdg_home("XDG_CONFIG_HOME", ".config") / "systemd/user/steam-shaders.service"
+    command = ("systemctl --user start steam-shaders.service" if unit.exists()
+               else "~/.local/bin/steam-shaders run")
+    return f"{COMPOSITORS[found]} {command}"
 
 
 def read_status(directory):
@@ -75,6 +90,10 @@ def doctor():
     if len(found) > 1:
         print("[AVISO] Mais de uma Steam encontrada; fixe steam_dir para escolher outra instalação.")
     print("Inicialização disponível: " + ("systemd de usuário" if systemd_available() else "autostart XDG"))
+    hint = startup_hint()
+    if hint:
+        print("[AVISO] Este compositor pode não iniciar o monitor no login. Adicione à configuração dele:")
+        print(f"  {hint}")
     print("Notificações: " + ("notify-send disponível" if which("notify-send") else
                               "instale libnotify-bin (Debian/Ubuntu) ou libnotify (Fedora/Arch)"))
     print("Painel GNOME: " + ("versão suportada" if gnome_supported() else

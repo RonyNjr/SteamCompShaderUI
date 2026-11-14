@@ -41,3 +41,34 @@ jobs:
           name: steam-shaders-decky
           path: dist/steam-shaders-*.zip
           if-no-files-found: error
+
+  release:
+    # Publica somente tags de versão, depois que os testes e o pacote passaram.
+    # Só este job recebe permissão de escrita; o build com dependências npm não.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [monitor, decky]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        with:
+          name: steam-shaders-decky
+          path: dist
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          version=$(python3 -c 'import json; print(json.load(open("package.json"))["version"])')
+          if [ "$TAG" != "v$version" ] || ! grep -qx "VERSION = \"$version\"" steam_shaders/support.py; then
+            echo "Tag $TAG does not match package.json/support.py version $version" >&2
+            exit 1
+          fi
+          # Nome fixo para o link .../releases/latest/download/steam-shaders.zip usado no Decky.
+          cp "dist/steam-shaders-$version.zip" dist/steam-shaders.zip
+          awk -v heading="## $version " 'index($0, heading) == 1 {found = 1; next}
+                                         found && /^## / {exit} found' CHANGELOG.md > notes.md
+          gh release create "$TAG" "dist/steam-shaders-$version.zip" dist/steam-shaders.zip \
+            --verify-tag --title "Steam Shaders $version" --notes-file notes.md

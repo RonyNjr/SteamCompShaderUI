@@ -1,17 +1,20 @@
 # Steam Shaders
 
+**English** · [Português do Brasil](README.pt-BR.md)
+
 Follow Steam's background shader compilation without keeping its downloads page open.
 See the game, Steam's reported percentage, the current stage, a stage estimate and recent history.
-
-[Português do Brasil](README.pt-BR.md) · [Decky installation](docs/decky.md)
 
 The monitor runs offline, reads Steam's logs and game manifests, and checks your user's
 `fossilize_replay` processes. It does not change games, Steam settings or shader caches.
 The Python monitor uses only the standard library.
 
-**Version 0.2.0 is a development release.** Linux desktop installation and a manually
-installable Decky plugin are included. The Decky build has not yet been tested on a real
-Steam Deck and is not listed in the Decky Plugin Store.
+**Version 0.2.0 is a development release.** It includes a Linux desktop installation and
+a Decky plugin installable from URL or ZIP ([Decky guide](docs/decky.md)). The Decky build
+has not yet been tested on a real Steam Deck and is not listed in the Decky Plugin Store.
+
+> **Interface language:** terminal messages, the GNOME indicator and the Decky panel are
+> currently in Brazilian Portuguese. The documentation is available in English and Portuguese.
 
 ## Choose an interface
 
@@ -98,6 +101,23 @@ steam-shaders stop
 
 `--startup none` removes this application's startup entries and leaves manual operation
 available. `stop` stops the current monitor; configured startup remains for your next login.
+
+### Hyprland, sway and i3
+
+These compositors do not run XDG autostart entries by default, so the monitor may not start
+after a reboot. `steam-shaders doctor` detects them and prints the exact line to add to your
+compositor configuration. For the default systemd installation:
+
+```text
+# Hyprland (~/.config/hypr/hyprland.conf)
+exec-once = systemctl --user start steam-shaders.service
+# sway (~/.config/sway/config)
+exec systemctl --user start steam-shaders.service
+# i3 (~/.config/i3/config)
+exec --no-startup-id systemctl --user start steam-shaders.service
+```
+
+With `--startup autostart`, use `~/.local/bin/steam-shaders run` as the command instead.
 
 ## Configuration and data
 
@@ -198,7 +218,12 @@ pnpm run package
 
 The resulting `dist/steam-shaders-0.2.0.zip` includes the monitor. The end user does not
 need Node.js, pnpm, pip or a separately installed service. See [docs/decky.md](docs/decky.md)
-for manual installation and the current store-submission restriction.
+for installation and the current store-submission restriction.
+
+To publish a release, update the version in `package.json`, `steam_shaders/support.py` and
+`integrations/gnome/metadata.json`, date the CHANGELOG entry, then push a matching tag
+(for example `git tag v0.2.0 && git push origin v0.2.0`). CI runs every check and attaches
+`steam-shaders-<version>.zip` and `steam-shaders.zip` to the GitHub release.
 
 Licensed under [MIT](LICENSE). Independent community project; not affiliated with Valve,
 Steam, GNOME or Decky Loader. See [CHANGELOG.md](CHANGELOG.md).
