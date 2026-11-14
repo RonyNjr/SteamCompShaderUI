@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 — unreleased
+## 0.2.0 — 2026-11-14
 
 - Discover native, Flatpak and common alternate Steam paths, with an explicit path override.
 - Support Linux desktops without GNOME, using terminal status and optional desktop notifications.
@@ -11,6 +11,8 @@
   Decky completion notifications. Real Steam Deck validation is pending.
 - Publish tagged releases from CI with a stable `steam-shaders.zip` link for Decky's
   "Install Plugin from URL".
+- Add a small desktop archive to each release, installable on any distribution without Git;
+  the desktop installer no longer copies the Decky-only module.
 - `doctor` shows the startup line for Hyprland, sway and i3, which skip XDG autostart.
 - The Decky ZIP ships only runtime files and the sources needed to rebuild its frontend;
   tests, the GNOME extension and the desktop installer stay out.

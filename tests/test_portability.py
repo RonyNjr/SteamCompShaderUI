@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 import unittest
@@ -203,6 +204,36 @@ class RuntimeTests(unittest.TestCase):
                     process.terminate()
                     process.wait(timeout=5)
                 process.stderr.close()
+
+
+class DesktopPackageTests(unittest.TestCase):
+    def test_release_archive_installs_without_the_repository(self):
+        from scripts.package_desktop import main as package
+
+        with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stdout(io.StringIO()):
+            root = Path(folder)
+            archive = package(root / "dist")
+            with tarfile.open(archive) as tar:
+                names = tar.getnames()
+                self.assertTrue(all(name.startswith("steam-shaders/") for name in names))
+                self.assertEqual([name for name in names if "/tests/" in name or name.endswith(".pyc")], [])
+                self.assertTrue(all(member.uid == 0 and member.uname == "" for member in tar.getmembers()))
+                options = {"filter": "data"} if hasattr(tarfile, "data_filter") else {}
+                tar.extractall(root / "download", **options)
+            target = root / "installed"
+            leftover = target / "lib/steamcompshaderui/steam_shaders/decky.py"  # Cópia de versões anteriores.
+            leftover.parent.mkdir(parents=True)
+            leftover.write_text("")
+            result = subprocess.run([sys.executable, str(root / "download/steam-shaders/install.py"),
+                                     "--root", str(target), "--startup", "none", "--gnome", "yes"],
+                                    cwd=root, capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            version = subprocess.check_output([str(target / "bin/steam-shaders"), "--version"], text=True)
+            self.assertEqual(version.strip(), VERSION)
+            self.assertFalse(leftover.exists())
+            extension = target / "share/gnome-shell/extensions/steam-shaders@rony.local"
+            self.assertTrue((extension / "model.js").is_file())
+            self.assertTrue((extension / "icons/shader-symbolic.svg").is_file())
 
 
 if __name__ == "__main__":

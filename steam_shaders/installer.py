@@ -16,12 +16,18 @@ from .support import APP_ID, GNOME_VERSIONS, VERSION, xdg_home
 UUID = "steam-shaders@rony.local"
 PACKAGE = Path(__file__).resolve().parent
 SOURCE = PACKAGE.parent
-PROGRAM_FILES = ("__init__.py", "__main__.py", "monitor.py", "support.py", "cli.py",
-                 "installer.py", "decky.py")
+PROGRAM_FILES = ("__init__.py", "__main__.py", "monitor.py", "support.py", "cli.py", "installer.py")
 LEGACY_FILES = ("monitor.py", "support.py", "cli.py", "install.py")
+# Copiado por versões anteriores; só o plugin do Decky usa este módulo.
+LEGACY_PACKAGE_FILES = ("decky.py",)
 EXTENSION_FILES = ("extension.js", "model.js", "stylesheet.css", "metadata.json",
                    "icons/shader-symbolic.svg")
 SERVICE = "steam-shaders.service"
+
+
+def extension_source(name):
+    # O modelo de apresentação é compartilhado com o Decky; o resto é próprio do GNOME.
+    return SOURCE / "integrations" / ("shared" if name == "model.js" else "gnome") / name
 
 
 def unit_quote(value):
@@ -110,10 +116,11 @@ def install(root=None, startup="auto", gnome="auto"):
         for name in EXTENSION_FILES:
             destination = extension / name
             destination.parent.mkdir(parents=True, exist_ok=True)
-            origin = SOURCE / "integrations" / ("shared" if name == "model.js" else "gnome") / name
-            shutil.copy2(origin, destination)
+            shutil.copy2(extension_source(name), destination)
     for name in LEGACY_FILES:
         (lib / name).unlink(missing_ok=True)
+    for name in LEGACY_PACKAGE_FILES:
+        (lib / "steam_shaders" / name).unlink(missing_ok=True)
     if mode != "systemd" and unit_path.exists():
         if not root and systemd_available():
             subprocess.run(["systemctl", "--user", "disable", "--now", SERVICE], check=True, timeout=20)
@@ -213,7 +220,7 @@ def uninstall(root=None):
         from .cli import stop_monitor
         stop_monitor(paths["data"] / APP_ID)
     extension = paths["data"] / "gnome-shell/extensions" / UUID
-    targets = [paths["lib"] / "steam_shaders" / name for name in PROGRAM_FILES]
+    targets = [paths["lib"] / "steam_shaders" / name for name in (*PROGRAM_FILES, *LEGACY_PACKAGE_FILES)]
     targets += [paths["lib"] / name for name in (*LEGACY_FILES, "run.py")]
     targets += [extension / name for name in EXTENSION_FILES]
     targets += [unit, paths["config"] / "autostart/steam-shaders.desktop", paths["bin"]]

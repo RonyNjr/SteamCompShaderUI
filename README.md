@@ -41,13 +41,18 @@ at startup. Pin a custom path in the configuration if needed.
 
 ## Install on a Linux desktop
 
-Install Python 3.9 or newer from your distribution, download/extract this repository or clone it:
+Install Python 3.9 or newer from your distribution, then download the latest release and run
+its installer:
 
 ```sh
-git clone https://github.com/RonyNjr/SteamCompShaderUI.git
-cd SteamCompShaderUI
+curl -fL https://github.com/RonyNjr/SteamCompShaderUI/releases/latest/download/steam-shaders-desktop.tar.gz | tar xz
+cd steam-shaders
 python3 install.py --activate
 ```
+
+The archive (about 30 KB) contains only the program, the GNOME extension and the license.
+You can also download it from the [releases page](https://github.com/RonyNjr/SteamCompShaderUI/releases)
+or run `install.py` from a `git clone` of this repository.
 
 Run this as your normal user, **without sudo**. No pip or Node.js is needed for desktop use.
 The installer copies the application into `~/.local/lib/steamcompshaderui`, adds
@@ -83,8 +88,8 @@ If your shell has not added `~/.local/bin` to `PATH`, use `~/.local/bin/steam-sh
 `doctor` prints paths and available features without changing your system. `status` rejects
 stale state rather than showing old progress as current.
 
-To update, download the new source or run `git pull`, then repeat the installer. For a
-preview that does not change your session:
+To update, repeat the commands above (or `git pull` in a clone) and run the installer again.
+For a preview that does not change your session:
 
 ```sh
 python3 install.py --root /tmp/steam-shaders-preview
@@ -222,8 +227,8 @@ for installation and the current store-submission restriction.
 
 To publish a release, update the version in `package.json`, `steam_shaders/support.py` and
 `integrations/gnome/metadata.json`, date the CHANGELOG entry, then push a matching tag
-(for example `git tag v0.2.0 && git push origin v0.2.0`). CI runs every check and attaches
-`steam-shaders-<version>.zip` and `steam-shaders.zip` to the GitHub release.
+(for example `git tag v0.2.0 && git push origin v0.2.0`). CI runs every check and attaches the
+Decky ZIP and the desktop archive to the GitHub release, each with a versioned and a fixed name.
 
 Licensed under [MIT](LICENSE). Independent community project; not affiliated with Valve,
 Steam, GNOME or Decky Loader. See [CHANGELOG.md](CHANGELOG.md).

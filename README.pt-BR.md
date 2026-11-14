@@ -31,13 +31,17 @@ Outras versões do GNOME ainda não são declaradas compatíveis.
 
 ## Instalação no desktop
 
-Com Python 3.9+ instalado, baixe e extraia o repositório ou use Git:
+Com Python 3.9+ instalado, baixe a release mais recente e execute o instalador:
 
 ```sh
-git clone https://github.com/RonyNjr/SteamCompShaderUI.git
-cd SteamCompShaderUI
+curl -fL https://github.com/RonyNjr/SteamCompShaderUI/releases/latest/download/steam-shaders-desktop.tar.gz | tar xz
+cd steam-shaders
 python3 install.py --activate
 ```
+
+O arquivo (cerca de 30 KB) contém só o programa, a extensão do GNOME e a licença. Também é
+possível baixá-lo na [página de releases](https://github.com/RonyNjr/SteamCompShaderUI/releases)
+ou executar o `install.py` a partir de um `git clone` deste repositório.
 
 Execute **sem sudo**. O programa é instalado só no seu usuário, sem pip e sem Node.js.
 O instalador escolhe systemd de usuário quando disponível; caso contrário, cria uma entrada
@@ -73,8 +77,8 @@ steam-shaders status --json
 progresso e recusa informações antigas se o monitor parar. Se o comando não for encontrado,
 use `~/.local/bin/steam-shaders` até o seu shell incluir essa pasta no `PATH`.
 
-Para atualizar, baixe a nova versão ou use `git pull` e repita a instalação. Para preparar uma
-cópia temporária sem mudar sua sessão:
+Para atualizar, repita os comandos acima (ou `git pull` em um clone) e execute o instalador
+de novo. Para preparar uma cópia temporária sem mudar sua sessão:
 
 ```sh
 python3 install.py --root /tmp/steam-shaders-revisao
@@ -227,7 +231,7 @@ loja estão em [docs/decky.pt-BR.md](docs/decky.pt-BR.md).
 Para publicar uma release, atualize a versão em `package.json`, `steam_shaders/support.py` e
 `integrations/gnome/metadata.json`, coloque a data no CHANGELOG e envie uma tag correspondente
 (por exemplo `git tag v0.2.0 && git push origin v0.2.0`). O CI roda todas as verificações e
-anexa `steam-shaders-<versão>.zip` e `steam-shaders.zip` à release no GitHub.
+anexa à release o ZIP do Decky e o arquivo desktop, cada um com nome versionado e nome fixo.
 
 Licença [MIT](LICENSE). Projeto independente, sem vínculo com Valve, Steam, GNOME ou Decky.
 Veja o [histórico de versões](CHANGELOG.md).
