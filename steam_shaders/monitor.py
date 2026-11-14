@@ -24,6 +24,7 @@ LOG = logging.getLogger("steam-shaders")
 COMPLETION_DELAY = 15
 STALE_PROGRESS = 30
 MISSING_PROCESS_DELAY = 45
+STATUS_HEARTBEAT = 10  # As interfaces consideram o estado antigo depois de 20 s.
 MARKERS = (b"Starting processing job", b"Still replaying", b"fossilize_replay completed",
            b"Destroyed compile job")
 EVENT_RE = re.compile(
@@ -444,6 +445,26 @@ def atomic_json(path, data):
     temporary.replace(path)
 
 
+class ChangedWriter:
+    """Grava só quando o conteúdo muda ou, com heartbeat, quando o último registro envelhece."""
+    def __init__(self, path, heartbeat=None):
+        self.path, self.heartbeat = path, heartbeat
+        self.last, self.written_at = None, None
+
+    def write(self, data, now, ignore=()):
+        # Serializar também detecta mudanças em dicionários alterados no lugar.
+        content = json.dumps({key: value for key, value in data.items() if key not in ignore},
+                             ensure_ascii=False, sort_keys=True)
+        # abs(): um relógio que volta no tempo também força uma nova gravação.
+        expired = (self.heartbeat is not None and self.written_at is not None and
+                   abs(now - self.written_at) >= self.heartbeat)
+        if content == self.last and not expired:
+            return False
+        atomic_json(self.path, data)
+        self.last, self.written_at = content, now
+        return True
+
+
 def load_checkpoint(path):
     try:
         saved = json.loads(path.read_text())
@@ -489,6 +510,9 @@ def _run_locked(args, stop_event, on_notification, register_signals):
     names = GameNames(steam)
     follower = LogFollower(steam / "logs/shader_log.txt", saved.get("cursor"))
     history = History(args.data_dir / "history.sqlite3")
+    # Sem compilação, evita gravar no disco a cada ciclo (bateria e SSD do Steam Deck).
+    checkpoint_writer = ChangedWriter(state_path)
+    status_writer = ChangedWriter(args.data_dir / "status.json", heartbeat=STATUS_HEARTBEAT)
     stopping = stop_event if stop_event is not None else threading.Event()
     next_discovery = 0
     if not found:
@@ -533,13 +557,13 @@ def _run_locked(args, stop_event, on_notification, register_signals):
                 history.add(row, names)
                 LOG.info("AppID %s: %s", row["appid"], row["outcome"])
             tracker.finished.clear()
-            atomic_json(state_path, {"version": 1, "steam_dir": str(steam), "tracker": tracker.checkpoint(),
-                                     "cursor": follower.cursor()})
+            checkpoint_writer.write({"version": 1, "steam_dir": str(steam), "tracker": tracker.checkpoint(),
+                                     "cursor": follower.cursor()}, now)
             snapshot = tracker.snapshot(now, names)
             snapshot.update(steam_dir=str(steam), steam_found=steam.is_dir(),
                             log_available=follower.path.is_file())
             snapshot["recent"] = history.recent()
-            atomic_json(args.data_dir / "status.json", snapshot)
+            status_writer.write(snapshot, now, ignore=("updated_at",))
             for row in tracker.notifications:
                 if on_notification:
                     on_notification(row, names)

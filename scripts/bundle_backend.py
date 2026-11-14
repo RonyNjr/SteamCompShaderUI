@@ -6,14 +6,17 @@ import shutil
 
 ROOT = Path(__file__).resolve().parents[1]
 STAGING = ROOT / "build/decky"
+# Só o que roda no Steam Deck; terminal e instalador pertencem ao desktop.
+DECKY_MODULES = ("__init__.py", "monitor.py", "support.py", "decky.py")
 
 
 def bundle():
     target = STAGING / "py_modules/steam_shaders"
-    target.mkdir(parents=True, exist_ok=True)
+    shutil.rmtree(target, ignore_errors=True)  # Não carrega módulos de builds anteriores.
+    target.mkdir(parents=True)
     (STAGING / "py_modules/__init__.py").unlink(missing_ok=True)
-    for source in (ROOT / "steam_shaders").glob("*.py"):
-        shutil.copy2(source, target / source.name)
+    for name in DECKY_MODULES:
+        shutil.copy2(ROOT / "steam_shaders" / name, target / name)
 
 
 if __name__ == "__main__":

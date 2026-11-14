@@ -12,6 +12,10 @@
 - Publish tagged releases from CI with a stable `steam-shaders.zip` link for Decky's
   "Install Plugin from URL".
 - `doctor` shows the startup line for Hyprland, sway and i3, which skip XDG autostart.
+- The Decky ZIP ships only runtime files and the sources needed to rebuild its frontend;
+  tests, the GNOME extension and the desktop installer stay out.
+- While idle, the monitor refreshes its status every 10 seconds and saves its checkpoint only
+  when it changes, instead of writing both files every 2 seconds.
 - Share the parser, history and presentation logic across the GNOME and Decky interfaces.
 - Add MIT licensing, English/Brazilian Portuguese documentation with a language switcher,
   CI and portability/lifecycle tests.

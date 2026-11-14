@@ -78,7 +78,8 @@ There is no second implementation of the log parser.
 
 Runtime files are placed in `build/decky/dist/`, `build/decky/py_modules/` and
 `build/decky/vendor/`. The packager moves them to the paths Decky expects inside the ZIP.
-The ZIP also includes the sources and licenses needed to rebuild the frontend.
+The ZIP also includes the sources and licenses needed to rebuild the frontend; tests, the GNOME
+extension and the desktop installer are left out.
 
 ## Configuration and diagnostics
 

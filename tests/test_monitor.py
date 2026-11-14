@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from steam_shaders.installer import configure_next_login, install, unit_quote
-from steam_shaders.monitor import (GameNames, History, LogFollower, Processes, Tracker,
+from steam_shaders.monitor import (ChangedWriter, GameNames, History, LogFollower, Processes, Tracker,
                      atomic_json, inspect_processes, parse_event, read_vdf)
 
 
@@ -337,6 +337,31 @@ class PersistenceAndProcessTests(unittest.TestCase):
             self.assertTrue(found.steam)
             self.assertTrue(found.replay)
             self.assertEqual(found.appids, {"42"})
+
+    def test_idle_status_is_rewritten_only_on_change_or_heartbeat(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "status.json"
+            status = ChangedWriter(path, heartbeat=10)
+
+            def write(now, state):
+                return status.write({"updated_at": now, "status": state}, now, ignore=("updated_at",))
+
+            self.assertTrue(write(0, "idle"))
+            self.assertFalse(write(2, "idle"))
+            self.assertEqual(json.loads(path.read_text())["updated_at"], 0)
+            self.assertTrue(write(4, "compiling"))
+            self.assertFalse(write(13, "compiling"))
+            self.assertTrue(write(14, "compiling"))  # Heartbeat antes do limite de 20 s das interfaces.
+            self.assertTrue(write(3, "compiling"))  # Relógio voltou: grava de novo.
+
+    def test_checkpoint_detects_changes_made_in_place(self):
+        with tempfile.TemporaryDirectory() as folder:
+            checkpoint = ChangedWriter(Path(folder) / "checkpoint.json")
+            state = {"tracker": {"active": {"percent": 10}}}
+            self.assertTrue(checkpoint.write(state, 0))
+            self.assertFalse(checkpoint.write(state, 1000))
+            state["tracker"]["active"]["percent"] = 11
+            self.assertTrue(checkpoint.write(state, 1001))
 
     def test_atomic_snapshot_and_staged_install(self):
         with tempfile.TemporaryDirectory() as folder:

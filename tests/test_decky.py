@@ -5,6 +5,7 @@ import importlib.util
 import json
 import logging
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import time
@@ -12,7 +13,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from scripts.bundle_backend import bundle
+from scripts.bundle_backend import DECKY_MODULES, bundle
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -91,6 +92,34 @@ class DeckyTests(unittest.IsolatedAsyncioTestCase):
         state = await self.plugin.get_status()
         self.assertIsNone(state["active"])
         self.assertIsNotNone(state.get("error"))
+
+
+class PackageTests(unittest.TestCase):
+    def test_bundled_backend_imports_without_desktop_modules(self):
+        bundle()
+        modules = ROOT / "build/decky/py_modules"
+        self.assertEqual(sorted(path.name for path in (modules / "steam_shaders").glob("*.py")),
+                         sorted(DECKY_MODULES))
+        # Processo isolado: só py_modules no caminho, como no Decky, sem o código do repositório.
+        code = ("import runpy, sys, types; sys.path[:0] = [sys.argv[1]]; "
+                "sys.modules['decky'] = types.SimpleNamespace(); "
+                "assert 'Plugin' in runpy.run_path(sys.argv[2]); "
+                "assert sys.modules['steam_shaders'].__file__.startswith(sys.argv[1])")
+        with tempfile.TemporaryDirectory() as folder:
+            subprocess.run([sys.executable, "-I", "-c", code, str(modules), str(ROOT / "main.py")],
+                           cwd=folder, check=True, capture_output=True)
+
+    def test_zip_sources_skip_tests_and_desktop_files(self):
+        sys.path.insert(0, str(ROOT / "scripts"))
+        self.addCleanup(sys.path.remove, str(ROOT / "scripts"))
+        import package_decky
+
+        names = {path.relative_to(ROOT).as_posix() for path in package_decky.source_files()}
+        self.assertLessEqual({"integrations/decky/index.tsx", "integrations/shared/model.js", "rollup.config.js",
+                              "pnpm-lock.yaml", "scripts/bundle_backend.py", "steam_shaders/decky.py"}, names)
+        unwanted = [name for name in names if name.startswith(("tests/", "integrations/gnome/", "docs/images/"))
+                    or name in ("install.py", "steam_shaders/cli.py", "steam_shaders/installer.py")]
+        self.assertEqual(unwanted, [])
 
 
 if __name__ == "__main__":
